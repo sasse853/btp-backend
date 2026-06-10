@@ -1,36 +1,24 @@
 FROM php:8.2-apache
 
-# Extensions PHP nécessaires pour Laravel
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libpq-dev \
-    zip \
-    unzip \
+    git curl libpng-dev libonig-dev libxml2-dev \
+    libpq-dev zip unzip \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 
-# Activer mod_rewrite pour Laravel
 RUN a2enmod rewrite
 
-# Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Définir le dossier de travail
 WORKDIR /var/www/html
 
-# Copier les fichiers du projet
 COPY . .
 
-# Installer les dépendances PHP
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
-# Permissions pour Laravel
+
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Config Apache : pointer vers public/
+# Config VirtualHost
 RUN echo '<VirtualHost *:80>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
@@ -39,6 +27,12 @@ RUN echo '<VirtualHost *:80>\n\
     </Directory>\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
+# ✅ AJOUT CRITIQUE : corriger apache2.conf pour que AllowOverride All soit respecté
+RUN sed -i 's|AllowOverride None|AllowOverride All|g' /etc/apache2/apache2.conf
+
 EXPOSE 80
 
-CMD php artisan migrate --force && php artisan db:seed --force && apache2-foreground
+# ✅ Seed avec --class pour éviter les doublons, ou utiliser truncate dans les seeders
+CMD php artisan migrate --force \
+    && php artisan db:seed --force \
+    && apache2-foreground

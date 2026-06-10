@@ -107,7 +107,7 @@ class DashboardController extends Controller
             ->whereIn('type_operation', ['depense', 'facture', 'avance_acompte'])
             ->where('date_operation', '>=', now()->subMonths(6)->startOfMonth())
             ->select(
-                DB::raw("DATE_FORMAT(date_operation, '%Y-%m') as mois"),
+                DB::raw("TO_CHAR(date_operation, 'YYYY-MM') as mois"),
                 DB::raw('SUM(montant) as total')
             )
             ->groupBy('mois')

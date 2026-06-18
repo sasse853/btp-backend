@@ -33,4 +33,4 @@ RUN sed -i 's|AllowOverride None|AllowOverride All|g' /etc/apache2/apache2.conf
 EXPOSE 80
 
 # ✅ Seed avec --class pour éviter les doublons, ou utiliser truncate dans les seeders
-CMD php artisan migrate:fresh --force && apache2-foreground
+CMD php artisan migrate:fresh --force // php artisan db:seed --force && apache2-foreground
